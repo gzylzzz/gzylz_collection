@@ -68,6 +68,7 @@
     const records = [];
     let kind = "audio";
     let currentShow = "";
+    let inWants = false;
 
     const isSection = value => /^(audio|videos?)$/i.test(value);
     const isTitleBeforeEntry = index => {
@@ -83,6 +84,12 @@
     for (let i=0;i<lines.length;i++) {
       const item = lines[i];
       const line = item.text;
+
+      if (/^wants$/i.test(line)) {
+        inWants = true;
+        currentShow = "";
+        continue;
+      }
 
       if (item.heading) {
         if (/^videos?$/i.test(line)) {
@@ -107,8 +114,10 @@
       if (isSection(line)) {
         kind = /^videos?$/i.test(line) ? "video" : "audio";
         currentShow = "";
+        inWants = false;
         continue;
       }
+      if (inWants) continue;
 
       // A bold title immediately followed by a dated metadata line is the
       // recording/show title, not part of the previous recording's notes.
