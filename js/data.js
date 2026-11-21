@@ -34,7 +34,7 @@
     if (dateIndex > 0) result.production = parts.slice(0,dateIndex).join(" | ");
     const tail = parts.slice(dateIndex+1);
     const trackingRe = /^(tracked|untracked|tracked and untracked|tracked\/untracked)$/i;
-    const typeRe = /\b(mp3|m4a|wav|aif|aiff|flac|vob|mp4|mov|mpeg|ts|avi|mkv|wmv|m4v)\b/i;
+    const typeRe = /\b(mp3|m4a|wav|aif|aiff|flac|vob|mp4|mov|mpeg|ts|avi|mkv|wmv|m4v|video|audio)\b/i;
     const sizeRe = /\b\d+(?:\.\d+)?\s*(?:kb|mb|gb|tb)\b/i;
     tail.forEach(part => {
       if (trackingRe.test(part)) result.tracking = part;
@@ -70,20 +70,24 @@
         if (!record.size) record.size=split.slice(1).join(", ");
         next++;
       }
-      const castLines=[], noteLines=[];
+      const castLines=[], noteLines=[], myNoteLines=[];
+      let textSection="cast";
       for (;next<lines.length;next++) {
         const value=lines[next];
         if (/^videos?$/i.test(value)||/^audios?$/i.test(value)||parseMetadata(value)) break;
         if (/^never gift$/i.test(value)) {record.gift="Never Gift";continue;}
         if (/^only gift$/i.test(value)) {record.gift="Only Gift";continue;}
         if (/^nft(?: except through master)?$/i.test(value)) {record.nft=value;continue;}
-        if (/^(my notes|my note):/i.test(value)) {record.mynotes=value.replace(/^(my notes|my note):\s*/i,"");continue;}
-        if (/^(notes?|master notes):/i.test(value)) {noteLines.push(value.replace(/^(notes?|master notes):\s*/i,""));continue;}
+        if (/^(my notes|my note):/i.test(value)) {textSection="mynotes";myNoteLines.push(value.replace(/^(my notes|my note):\s*/i,""));continue;}
+        if (/^(notes?|master notes):/i.test(value)) {textSection="notes";noteLines.push(value.replace(/^(notes?|master notes):\s*/i,""));continue;}
         if (/^(limited trade|never to be sold|please do not)/i.test(value)) {record.gift=record.gift?record.gift+"; "+value:value;continue;}
-        if (noteLines.length) noteLines.push(value); else castLines.push(value);
+        if (textSection==="mynotes") myNoteLines.push(value);
+        else if (textSection==="notes") noteLines.push(value);
+        else castLines.push(value);
       }
       record.cast=castLines.join("\n");
       record.notes=noteLines.join("\n");
+      record.mynotes=myNoteLines.join("\n");
       if (record.show && (record.production || record.date || record.master)) records.push(record);
       i=next-1;
     }
