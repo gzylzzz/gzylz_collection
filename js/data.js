@@ -27,8 +27,9 @@
     return records;
   }
   function parseMetadata(line) {
+    if (!line.includes("|")) return null;
     const parts = line.split("|").map(clean).filter(Boolean);
-    const dateIndex = parts.findIndex(part => /(?:19|20)\d{2}[-/](?:0?[1-9]|1[0-2])(?:[-/](?:0?[1-9]|[12]\d|3[01]))?/.test(part));
+    const dateIndex = parts.findIndex(part => /^(?:19|20)\d{2}[-/](?:0?[1-9]|1[0-2])(?:[-/](?:0?[1-9]|[12]\d|3[01]))?(?:\s*\([^)]*\))?$/.test(part));
     if (dateIndex < 0) return null;
     const result = {production:"", date:parts[dateIndex], master:"", tracking:"", type:"", size:""};
     if (dateIndex > 0) result.production = parts.slice(0,dateIndex).join(" | ");
@@ -48,20 +49,36 @@
   function textFallback(doc) {
     let lines = [...doc.querySelectorAll("p,li")].map(el => clean(el.innerText || el.textContent)).filter(Boolean);
     if (!lines.length) lines = clean(doc.body?.innerText || "").split(/\n+/).map(clean).filter(Boolean);
+    lines = lines.filter(line => !/^<PARSED TEXT FOR PAGE:/i.test(line));
     const records = [];
     let kind = "audio";
+    let currentShow = "";
     for (let i=0;i<lines.length;i++) {
       const line = lines[i];
-      if (/^videos?$/i.test(line)) { kind="video"; continue; }
-      if (/^audios?$/i.test(line)) { kind="audio"; continue; }
+      if (/^videos?$/i.test(line)) { kind="video"; currentShow=""; continue; }
+      if (/^audios?$/i.test(line)) { kind="audio"; currentShow=""; continue; }
       const meta = parseMetadata(line);
       if (!meta) continue;
-      let show = "";
-      for (let j=i-1;j>=0;j--) {
-        const candidate=lines[j];
-        if (candidate && !/^(never gift|only gift|nft|notes?:|my notes:)/i.test(candidate)) { show=candidate; break; }
+
+      // In this document a show heading is normally printed twice:
+      // once as the centered heading and once as the entry's title.
+      // Search only the text since the previous recording, so cast/notes
+      // from the preceding item can never become the next item's title.
+      let showCandidate = "";
+      for (let j=i-1;j>0;j--) {
+        if (parseMetadata(lines[j])) break;
+        if (lines[j] === lines[j-1] && lines[j].length > 1) {
+          showCandidate = lines[j];
+          break;
+        }
       }
-      const record = Object.assign({_id:"paragraph-"+i,kind,show},meta,{cast:"",notes:"",mynotes:"",gift:"",nft:""});
+      if (showCandidate) currentShow = showCandidate;
+      const record = Object.assign(
+        {_id:"paragraph-"+i,kind,show:currentShow},
+        meta,
+        {cast:"",notes:"",mynotes:"",gift:"",nft:""}
+      );
+
       let next=i+1;
       if (next<lines.length && /^\([^)]*,[^)]*\)$/.test(lines[next])) {
         const fileLine=lines[next].replace(/^\(|\)$/g,"");
@@ -75,9 +92,11 @@
       for (;next<lines.length;next++) {
         const value=lines[next];
         if (/^videos?$/i.test(value)||/^audios?$/i.test(value)||parseMetadata(value)) break;
+        // The repeated next-show heading marks the end of this recording.
+        if (next+1<lines.length && value.length>1 && value===lines[next+1]) break;
         if (/^never gift$/i.test(value)) {record.gift="Never Gift";continue;}
         if (/^only gift$/i.test(value)) {record.gift="Only Gift";continue;}
-        if (/^nft(?: except through master)?$/i.test(value)) {record.nft=value;continue;}
+        if (/^nft(?: until .*)?$/i.test(value)) {record.nft=value;continue;}
         if (/^(my notes|my note):/i.test(value)) {textSection="mynotes";myNoteLines.push(value.replace(/^(my notes|my note):\s*/i,""));continue;}
         if (/^(notes?|master notes):/i.test(value)) {textSection="notes";noteLines.push(value.replace(/^(notes?|master notes):\s*/i,""));continue;}
         if (/^(limited trade|never to be sold|please do not)/i.test(value)) {record.gift=record.gift?record.gift+"; "+value:value;continue;}
