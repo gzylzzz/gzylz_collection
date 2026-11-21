@@ -47,7 +47,7 @@
     return result;
   }
   function textFallback(doc) {
-    let lines = [...doc.querySelectorAll("p,li")].map(el => clean(el.innerText || el.textContent)).filter(Boolean);
+    let lines = [...doc.querySelectorAll("p,li,h1,h2,h3")].map(el => clean(el.innerText || el.textContent)).filter(Boolean);
     if (!lines.length) lines = clean(doc.body?.innerText || "").split(/\n+/).map(clean).filter(Boolean);
     lines = lines.filter(line => !/^<PARSED TEXT FOR PAGE:/i.test(line));
     const records = [];
