@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f5f0">
+  <title>gzylz collection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script defer src="js/config.js"></script>
+  <script defer src="js/data.js"></script>
+  <script defer src="js/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#home">gzylz <span>collection</span></a>
+    <nav aria-label="Main navigation">
+      <button class="nav-link active" data-view="home">Home</button>
+      <button class="nav-link" data-view="audio">Audio</button>
+      <button class="nav-link" data-view="video">Video</button>
+    </nav>
+    <button class="selection-trigger" id="open-selection">Selection <b id="selection-count">0</b></button>
+  </header>
+
+  <main class="shell">
+    <section id="home-view" class="view active">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">MUSICAL THEATRE ARCHIVE</p>
+          <h1>A little corner<br>of the collection.</h1>
+          <p class="intro">Browse, search, and keep track of recordings.</p>
+        </div>
+        <aside class="source-card">
+          <span class="eyebrow">COLLECTION STATUS</span>
+          <p id="source-status" class="source-status"><i></i> Connecting to the list…</p>
+          <p id="updated-at" class="muted small"></p>
+          <button class="text-button" id="refresh-button">Refresh list ↗</button>
+        </aside>
+      </div>
+
+      <div class="stats">
+        <button class="stat-card" data-view="audio"><span class="stat-number" id="audio-total">—</span><span class="stat-label">Audio recordings</span><span class="stat-arrow">↗</span></button>
+        <button class="stat-card" data-view="video"><span class="stat-number" id="video-total">—</span><span class="stat-label">Video recordings</span><span class="stat-arrow">↗</span></button>
+        <div class="stat-card static"><span class="stat-number" id="show-total">—</span><span class="stat-label">Show titles</span></div>
+      </div>
+
+      <div class="search-area">
+        <label class="eyebrow" for="search-input">FIND SOMETHING</label>
+        <div class="search-wrap"><span>⌕</span><input id="search-input" type="search" placeholder="Search shows, productions, cast, masters…"><kbd>/</kbd></div>
+        <div class="filter-row" id="search-filters">
+          <button class="chip active" data-filter="all">All</button>
+          <button class="chip" data-filter="audio">Audio</button>
+          <button class="chip" data-filter="video">Video</button>
+        </div>
+        <p id="search-summary" class="muted small"></p>
+        <div id="search-results" class="record-list"></div>
+      </div>
+    </section>
+
+    <section id="audio-view" class="view">
+      <div class="page-title"><div><p class="eyebrow">BROWSE COLLECTION</p><h1>Audio</h1><p class="muted" id="audio-subtitle">Loading recordings…</p></div><button class="quiet-button" data-view="home">← Home</button></div>
+      <div class="toolbar"><input class="section-search" id="audio-search" type="search" placeholder="Search audio…"><button class="quiet-button" data-expand="audio">Expand all</button></div>
+      <div id="audio-list" class="group-list"></div>
+    </section>
+
+    <section id="video-view" class="view">
+      <div class="page-title"><div><p class="eyebrow">BROWSE COLLECTION</p><h1>Video</h1><p class="muted" id="video-subtitle">Loading recordings…</p></div><button class="quiet-button" data-view="home">← Home</button></div>
+      <div class="toolbar"><input class="section-search" id="video-search" type="search" placeholder="Search video…"><button class="quiet-button" data-expand="video">Expand all</button></div>
+      <div id="video-list" class="group-list"></div>
+    </section>
+  </main>
+
+  <dialog id="selection-dialog" class="selection-dialog">
+    <div class="dialog-heading"><div><p class="eyebrow">YOUR SHORTLIST</p><h2>Selected recordings</h2></div><button class="close-button" id="close-selection" aria-label="Close">×</button></div>
+    <p class="muted small">Choose recordings from Audio or Video, then copy the list for your trade message.</p>
+    <div id="selection-items"></div>
+    <div class="dialog-actions"><button class="quiet-button" id="clear-selection">Clear all</button><button class="primary-button" id="copy-selection">Copy selection</button></div>
+    <p id="copy-feedback" class="small feedback"></p>
+  </dialog>
+
+  <footer><span>gzylz collection</span><span>Personal catalogue · data loaded from Google Docs</span></footer>
+</body>
+</html>
