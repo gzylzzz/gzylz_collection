@@ -23,9 +23,21 @@
         if (!cells.some(Boolean)) return;
         const get = key => indexes[key] >= 0 ? clean(cells[indexes[key]] || "") : "";
         const record = { _id:"doc-" + tableNo + "-" + rowNo, show:get("show"), production:get("production"), date:get("date"), master:get("master"), cast:get("cast"), notes:get("notes"), type:get("type"), tracking:get("tracking"), size:get("size"), gift:get("gift"), nft:get("nft"), mynotes:get("mynotes") };
-        const context = table.parentElement?.innerText || "";
-        const kindText = (context.slice(0, 500) + " " + table.innerText.slice(0, 100)).toLowerCase();
-        record.kind = /video/.test(kindText) && !/audio/.test(kindText) ? "video" : "audio";
+        function findSectionKind(node) {
+          let current = node;
+          while (current) {
+            let previous = current.previousElementSibling;
+            while (previous) {
+              const label = clean(previous.innerText || previous.textContent).toLowerCase();
+              if (/^videos?$/.test(label)) return "video";
+              if (/^audios?$/.test(label)) return "audio";
+              previous = previous.previousElementSibling;
+            }
+            current = current.parentElement;
+          }
+          return "audio";
+        }
+        record.kind = findSectionKind(table);
         if (record.show || record.production || record.master) records.push(record);
       });
     });
