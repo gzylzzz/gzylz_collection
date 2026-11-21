@@ -47,68 +47,129 @@
     return result;
   }
   function textFallback(doc) {
-    let lines = [...doc.querySelectorAll("p,li,h1,h2,h3")].map(el => clean(el.innerText || el.textContent)).filter(Boolean);
-    if (!lines.length) lines = clean(doc.body?.innerText || "").split(/\n+/).map(clean).filter(Boolean);
-    lines = lines.filter(line => !/^<PARSED TEXT FOR PAGE:/i.test(line));
+    const nodes = [...doc.querySelectorAll("h1,h2,h3,p,li")];
+    const items = nodes.map(el => {
+      const text = clean(el.innerText || el.textContent);
+      const tag = el.tagName.toLowerCase();
+      const style = (el.getAttribute("style") || "").toLowerCase();
+      const bold = !!el.querySelector("b,strong") ||
+        /font-weight\s*:\s*(bold|[6-9]00)/i.test(style) ||
+        [...el.querySelectorAll("[style]")].some(child =>
+          /font-weight\s*:\s*(bold|[6-9]00)/i.test(child.getAttribute("style") || "")
+        );
+      return {el,text,tag,bold,heading:/^h[1-3]$/.test(tag)};
+    }).filter(item => item.text);
+
+    // Some published Google Docs layouts flatten paragraphs. Keep a text-only
+    // fallback, but never use arbitrary preceding cast/note text as a show name.
+    const lines = items.length ? items : clean(doc.body?.innerText || "")
+      .split(/\n+/).map(text => ({text:clean(text),tag:"p",bold:false,heading:false})).filter(x => x.text);
+
     const records = [];
     let kind = "audio";
     let currentShow = "";
+
+    const isSection = value => /^(audio|videos?)$/i.test(value);
+    const isTitleBeforeEntry = index => {
+      const item = lines[index];
+      if (!item || !item.bold || item.heading || !item.text) return false;
+      for (let j=index+1;j<lines.length;j++) {
+        if (!lines[j].text) continue;
+        return !!parseMetadata(lines[j].text);
+      }
+      return false;
+    };
+
     for (let i=0;i<lines.length;i++) {
-      const line = lines[i];
-      if (/^videos?$/i.test(line)) { kind="video"; currentShow=""; continue; }
-      if (/^audios?$/i.test(line)) { kind="audio"; currentShow=""; continue; }
+      const item = lines[i];
+      const line = item.text;
+
+      if (item.heading) {
+        if (/^videos?$/i.test(line)) {
+          kind = "video";
+          currentShow = "";
+        } else if (/^audios?$/i.test(line)) {
+          kind = "audio";
+          currentShow = "";
+        } else if (/^concerts?$/i.test(line)) {
+          // Concert is a collection section; individual concert titles below
+          // identify the actual show for each entry.
+          kind = "audio";
+          currentShow = "";
+        } else {
+          // Heading 2 tabs such as Les Misérables and The Phantom of the Opera
+          // explicitly start a new show group.
+          currentShow = line;
+        }
+        continue;
+      }
+
+      if (isSection(line)) {
+        kind = /^videos?$/i.test(line) ? "video" : "audio";
+        currentShow = "";
+        continue;
+      }
+
+      // A bold title immediately followed by a dated metadata line is the
+      // recording/show title, not part of the previous recording's notes.
+      if (isTitleBeforeEntry(i)) {
+        currentShow = line;
+        continue;
+      }
+
       const meta = parseMetadata(line);
       if (!meta) continue;
 
-      // In this document a show heading is normally printed twice:
-      // once as the centered heading and once as the entry's title.
-      // Search only the text since the previous recording, so cast/notes
-      // from the preceding item can never become the next item's title.
-      let showCandidate = "";
-      for (let j=i-1;j>0;j--) {
-        if (parseMetadata(lines[j])) break;
-        if (lines[j] === lines[j-1] && lines[j].length > 1) {
-          showCandidate = lines[j];
-          break;
-        }
-      }
-      if (showCandidate) currentShow = showCandidate;
       const record = Object.assign(
         {_id:"paragraph-"+i,kind,show:currentShow},
         meta,
         {cast:"",notes:"",mynotes:"",gift:"",nft:""}
       );
 
-      let next=i+1;
-      if (next<lines.length && /^\([^)]*,[^)]*\)$/.test(lines[next])) {
-        const fileLine=lines[next].replace(/^\(|\)$/g,"");
-        const split=fileLine.split(",").map(clean);
-        if (!record.type) record.type=split[0]||"";
-        if (!record.size) record.size=split.slice(1).join(", ");
+      let next = i + 1;
+      if (next < lines.length && /^\([^)]*,[^)]*\)$/.test(lines[next].text)) {
+        const split = lines[next].text.replace(/^\(|\)$/g,"").split(",").map(clean);
+        if (!record.type) record.type = split[0] || "";
+        if (!record.size) record.size = split.slice(1).join(", ");
         next++;
       }
-      const castLines=[], noteLines=[], myNoteLines=[];
-      let textSection="cast";
+
+      const castLines = [], noteLines = [], myNoteLines = [];
+      let textSection = "cast";
       for (;next<lines.length;next++) {
-        const value=lines[next];
-        if (/^videos?$/i.test(value)||/^audios?$/i.test(value)||parseMetadata(value)) break;
-        // The repeated next-show heading marks the end of this recording.
-        if (next+1<lines.length && value.length>1 && value===lines[next+1]) break;
-        if (/^never gift$/i.test(value)) {record.gift="Never Gift";continue;}
-        if (/^only gift$/i.test(value)) {record.gift="Only Gift";continue;}
-        if (/^nft(?: until .*)?$/i.test(value)) {record.nft=value;continue;}
-        if (/^(my notes|my note):/i.test(value)) {textSection="mynotes";myNoteLines.push(value.replace(/^(my notes|my note):\s*/i,""));continue;}
-        if (/^(notes?|master notes):/i.test(value)) {textSection="notes";noteLines.push(value.replace(/^(notes?|master notes):\s*/i,""));continue;}
-        if (/^(limited trade|never to be sold|please do not)/i.test(value)) {record.gift=record.gift?record.gift+"; "+value:value;continue;}
-        if (textSection==="mynotes") myNoteLines.push(value);
-        else if (textSection==="notes") noteLines.push(value);
+        const value = lines[next].text;
+
+        // Stop at the next tab/section heading or the next recording entry.
+        if (lines[next].heading || isSection(value) || parseMetadata(value)) break;
+        if (isTitleBeforeEntry(next)) break;
+
+        if (/^never gift\.?$/i.test(value)) { record.gift = "Never Gift"; continue; }
+        if (/^only gift\.?$/i.test(value)) { record.gift = "Only Gift"; continue; }
+        if (/^nft(?: until .*)?$/i.test(value)) { record.nft = value; continue; }
+        if (/^(my notes|my note):/i.test(value)) {
+          textSection = "mynotes";
+          myNoteLines.push(value.replace(/^(my notes|my note):\s*/i,""));
+          continue;
+        }
+        if (/^(notes?|master notes):/i.test(value)) {
+          textSection = "notes";
+          noteLines.push(value.replace(/^(notes?|master notes):\s*/i,""));
+          continue;
+        }
+        if (/^(limited trade|never to be sold|please do not)/i.test(value)) {
+          record.gift = record.gift ? record.gift + "; " + value : value;
+          continue;
+        }
+        if (textSection === "mynotes") myNoteLines.push(value);
+        else if (textSection === "notes") noteLines.push(value);
         else castLines.push(value);
       }
-      record.cast=castLines.join("\n");
-      record.notes=noteLines.join("\n");
-      record.mynotes=myNoteLines.join("\n");
+
+      record.cast = castLines.join("\n");
+      record.notes = noteLines.join("\n");
+      record.mynotes = myNoteLines.join("\n");
       if (record.show && (record.production || record.date || record.master)) records.push(record);
-      i=next-1;
+      i = next - 1;
     }
     return records;
   }
