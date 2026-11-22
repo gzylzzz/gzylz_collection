@@ -16,7 +16,7 @@
   function groupByTitle(list) {
     const map = new Map();
     list.forEach(r => { const key=showName(r); if(!map.has(key)) map.set(key,[]); map.get(key).push(r); });
-    const sortTitle = title => title.replace(/^the\\s+/i, "").trim();
+    const sortTitle = title => title.replace(/^the\s+/i, "").trim();
     return [...map.entries()].sort((a,b)=>{
       const byMainTitle = sortTitle(a[0]).localeCompare(sortTitle(b[0]),undefined,{sensitivity:"base"});
       return byMainTitle || a[0].localeCompare(b[0],undefined,{sensitivity:"base"});
