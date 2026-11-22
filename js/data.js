@@ -29,7 +29,8 @@
   function parseMetadata(line) {
     if (!line.includes("|")) return null;
     const parts = line.split("|").map(clean).filter(Boolean);
-    const dateIndex = parts.findIndex(part => /^(?:19|20)\d{2}(?:[-/](?:0?[1-9]|1[0-2])(?:[-/](?:0?[1-9]|[12]\d|3[01]))?)?(?:\s*\([^)]*\))?$/.test(part));
+    const datePattern = /^(?:(?:19|20)\d{2}(?:\s*[-/]\s*(?:(?:19|20)\d{2}|0?[1-9]|1[0-2])(?:\s*[-/]\s*(?:0?[1-9]|[12]\d|3[01]))?)?|(?:19|20)\d{2}\s*[-/]\s*(?:19|20)\d{2})(?:\s*\([^)]*\))?$/;
+    const dateIndex = parts.findIndex(part => datePattern.test(part));
     if (dateIndex < 0) return null;
     const result = {production:"", date:parts[dateIndex], master:"", tracking:"", type:"", size:""};
     if (dateIndex > 0) result.production = parts.slice(0,dateIndex).join(" | ");
