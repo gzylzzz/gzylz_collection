@@ -155,7 +155,12 @@
 
         if (/^never gift\.?$/i.test(value)) { record.gift = "Never Gift"; continue; }
         if (/^only gift\.?$/i.test(value)) { record.gift = "Only Gift"; continue; }
-        if (/^nft(?: until .*)?$/i.test(value)) { record.nft = value; continue; }
+        // NFT restriction lines may be marked with a bullet in the source document.
+        const nftLine = value.replace(/^[●•▪︎◦*\\-]+\\s*/, "").trim();
+        if (/^nft(?:\\s+(?:except\\s+through\\s+master|until\\b.*))?$/i.test(nftLine)) {
+          record.nft = nftLine;
+          continue;
+        }
         if (/^(my notes|my note):/i.test(value)) {
           textSection = "mynotes";
           myNoteLines.push(value.replace(/^(my notes|my note):\s*/i,""));
