@@ -156,8 +156,8 @@
         if (/^never gift\.?$/i.test(value)) { record.gift = "Never Gift"; continue; }
         if (/^only gift\.?$/i.test(value)) { record.gift = "Only Gift"; continue; }
         // NFT restriction lines may be marked with a bullet in the source document.
-        const nftLine = value.replace(/^[●•▪︎◦*\\-]+\\s*/, "").trim();
-        if (/^nft(?:\\s+(?:except\\s+through\\s+master|until\\b.*))?$/i.test(nftLine)) {
+        const nftLine = value.replace(/^[●•▪︎◦*-]+\s*/, "").trim();
+        if (/^nft(?:\s+(?:except\s+through\s+master|until\b.*))?$/i.test(nftLine)) {
           record.nft = nftLine;
           continue;
         }
