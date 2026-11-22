@@ -5,6 +5,10 @@
   const fields = [["Production","production"],["Date","date"],["Master","master"],["Cast","cast"],["Notes","notes"],["My Notes","mynotes"]];
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
   const truthy = value => /^(true|yes|y|✓)$/i.test(String(value || "").trim());
+  const hasNftRestriction = value => {
+    const text = String(value || "").trim();
+    return !!text && !/^(false|no|none|n)$/i.test(text);
+  };
   const isVideo = r => r.kind === "video";
   const showName = r => r.show || "Untitled recording";
   const searchable = r => Object.values(r).join(" ").toLowerCase();
@@ -12,17 +16,21 @@
   function groupByTitle(list) {
     const map = new Map();
     list.forEach(r => { const key=showName(r); if(!map.has(key)) map.set(key,[]); map.get(key).push(r); });
-    return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0],undefined,{sensitivity:"base"}));
+    const sortTitle = title => title.replace(/^the\\s+/i, "").trim();
+    return [...map.entries()].sort((a,b)=>{
+      const byMainTitle = sortTitle(a[0]).localeCompare(sortTitle(b[0]),undefined,{sensitivity:"base"});
+      return byMainTitle || a[0].localeCompare(b[0],undefined,{sensitivity:"base"});
+    });
   }
   function detailHTML(r) {
     const lines=fields.filter(([,key])=>r[key]).map(([label,key])=>'<div class="detail"><strong>'+label+':</strong> '+esc(r[key]).replace(/\n/g,"<br>")+'</div>').join("");
-    const tags=[r.type,r.tracking,r.size,truthy(r.nft)?"NFT except through master":"",r.gift].filter(Boolean);
+    const tags=[r.type,r.tracking,r.size,hasNftRestriction(r.nft)?(r.nft === "true" ? "NFT restricted" : r.nft):"",r.gift].filter(Boolean);
     return '<div class="record-details" hidden>'+lines+(tags.length?'<div class="tags">'+tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join("")+'</div>':"")+'</div>';
   }
   function recordHTML(r) {
     const meta=[r.production,r.date,r.master].filter(Boolean).join(" · ");
     const checked=selected.has(r._id)?"checked":"";
-    const disabled=truthy(r.nft)?"disabled title='NFT except through master'":"";
+    const disabled=hasNftRestriction(r.nft)?"disabled title='NFT restricted'":"";
     return '<article class="record"><div class="record-row"><input class="record-check" type="checkbox" data-select="'+esc(r._id)+'" '+checked+' '+disabled+'><button class="record-main" data-open-record><span class="record-title">'+esc(showName(r))+'</span><span class="record-sub">'+esc(meta)+'</span></button><button class="record-open" data-open-record aria-label="Show details">⌄</button></div>'+detailHTML(r)+'</article>';
   }
   function listHTML(list) {
