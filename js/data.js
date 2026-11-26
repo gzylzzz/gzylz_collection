@@ -72,7 +72,7 @@
     let inWants = false;
 
     const isSection = value => /^(audio|videos?|concerts?(?:\s*\(miscellaneous\))?)$/i.test(value);
-    const isAudioCount = value => /^\\d+\\s+audios?$/i.test(clean(value));
+    const isAudioCount = value => /^\d+\s+audios?$/i.test(clean(value));
     const isTitleBeforeEntry = index => {
       const item = lines[index];
       if (!item || item.heading || !item.text || isSection(item.text) || isAudioCount(item.text)) return false;
