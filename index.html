@@ -20,6 +20,7 @@
       <button class="nav-link" data-view="audio">Audio</button>
       <button class="nav-link" data-view="video">Video</button>
     </nav>
+    <button class="quiet-button global-expand" data-expand="all">Expand all</button>
     <button class="selection-trigger" id="open-selection">Selection <b id="selection-count">0</b></button>
   </header>
 
@@ -60,13 +61,13 @@
 
     <section id="audio-view" class="view">
       <div class="page-title"><div><p class="eyebrow">BROWSE COLLECTION</p><h1>Audio</h1><p class="muted" id="audio-subtitle">Loading recordings…</p></div><button class="quiet-button" data-view="home">← Home</button></div>
-      <div class="toolbar"><input class="section-search" id="audio-search" type="search" placeholder="Search audio…"><button class="quiet-button" data-expand="audio">Expand all</button></div>
+      <div class="toolbar"><input class="section-search" id="audio-search" type="search" placeholder="Search audio…"><button class="quiet-button" data-expand="audio">Expand all groups</button><button class="quiet-button" data-select-all="audio">Select all</button></div>
       <div id="audio-list" class="group-list"></div>
     </section>
 
     <section id="video-view" class="view">
       <div class="page-title"><div><p class="eyebrow">BROWSE COLLECTION</p><h1>Video</h1><p class="muted" id="video-subtitle">Loading recordings…</p></div><button class="quiet-button" data-view="home">← Home</button></div>
-      <div class="toolbar"><input class="section-search" id="video-search" type="search" placeholder="Search video…"><button class="quiet-button" data-expand="video">Expand all</button></div>
+      <div class="toolbar"><input class="section-search" id="video-search" type="search" placeholder="Search video…"><button class="quiet-button" data-expand="video">Expand all groups</button><button class="quiet-button" data-select-all="video">Select all</button></div>
       <div id="video-list" class="group-list"></div>
     </section>
   </main>
