@@ -30,7 +30,7 @@
   function recordHTML(r) {
     const meta=[r.production,r.date,r.master].filter(Boolean).join(" · ");
     const checked=selected.has(r._id)?"checked":"";
-    return '<article class="record"><div class="record-row"><input class="record-check" type="checkbox" data-select="'+esc(r._id)+'" '+checked+' '+disabled+'><button class="record-main" data-open-record><span class="record-title">'+esc(showName(r))+'</span><span class="record-sub">'+esc(meta)+'</span></button><button class="record-open" data-open-record aria-label="Show details">⌄</button></div>'+detailHTML(r)+'</article>';
+    return '<article class="record"><div class="record-row"><input class="record-check" type="checkbox" data-select="'+esc(r._id)+'" '+checked+'><button class="record-main" data-open-record><span class="record-title">'+esc(showName(r))+'</span><span class="record-sub">'+esc(meta)+'</span></button><button class="record-open" data-open-record aria-label="Show details">⌄</button></div>'+detailHTML(r)+'</article>';
   }
   function listHTML(list) {
     if(!list.length) return '<div class="empty">No recordings found.</div>';
