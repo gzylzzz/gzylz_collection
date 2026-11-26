@@ -97,7 +97,7 @@
     const expand=event.target.closest("[data-expand]");
     if(expand){
       const roots=expand.dataset.expand==="all"?["#audio-list","#video-list"]:[expand.dataset.expand==="audio"?"#audio-list":"#video-list"];
-      const bodies=roots.flatMap(root=>$(root+" .group-body"));
+      const bodies=roots.flatMap(root=>$$(root+" .group-body"));
       const open=bodies.some(b=>b.hidden);
       bodies.forEach(b=>{b.hidden=!open;b.closest(".group").classList.toggle("open",open);});
       expand.textContent=open?(expand.dataset.expand==="all"?"Collapse all":"Collapse all groups"):(expand.dataset.expand==="all"?"Expand all":"Expand all groups");
