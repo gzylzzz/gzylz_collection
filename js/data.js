@@ -72,11 +72,13 @@
     let inWants = false;
 
     const isSection = value => /^(audio|videos?|concerts?(?:\s*\(miscellaneous\))?)$/i.test(value);
+    const isAudioCount = value => /^\\d+\\s+audios?$/i.test(clean(value));
     const isTitleBeforeEntry = index => {
       const item = lines[index];
-      if (!item || item.heading || !item.text || isSection(item.text)) return false;
+      if (!item || item.heading || !item.text || isSection(item.text) || isAudioCount(item.text)) return false;
       for (let j=index+1;j<lines.length;j++) {
         if (!lines[j].text) continue;
+        if (isAudioCount(lines[j].text)) return false;
         return !!parseMetadata(lines[j].text);
       }
       return false;
@@ -119,7 +121,18 @@
       }
       if (inWants) continue;
 
-      // A bold title immediately followed by a dated metadata line is the
+      // Google Docs show sections may put a count line between the title
+      // and the first recording, e.g. "Chess" followed by "24 audios".
+      if (isAudioCount(line)) {
+        const previous = lines[i-1];
+        if (previous && previous.text && !previous.heading &&
+            !isSection(previous.text) && !parseMetadata(previous.text)) {
+          currentShow = previous.text;
+        }
+        continue;
+      }
+
+      // A title immediately followed by a dated metadata line is the
       // recording/show title, not part of the previous recording's notes.
       if (isTitleBeforeEntry(i)) {
         currentShow = line;
@@ -149,7 +162,7 @@
         const value = lines[next].text;
 
         // Stop at the next tab/section heading or the next recording entry.
-        if (lines[next].heading || isSection(value) || parseMetadata(value)) break;
+        if (lines[next].heading || isSection(value) || isAudioCount(value) || parseMetadata(value)) break;
         if (isTitleBeforeEntry(next)) break;
 
         if (/^never gift\.?$/i.test(value)) { record.gift = "Never Gift"; continue; }
