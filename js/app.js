@@ -131,8 +131,8 @@
     const row=records.find(r=>r._id===input.dataset.select);if(input.checked&&row)selected.set(row._id,row);else selected.delete(input.dataset.select);updateSelection();
   });
   $("#search-input").addEventListener("input",runSearch);
-  $("#audio-search").addEventListener("input",e=>{$("#audio-list").innerHTML=listHTML(records.filter(r=>!isVideo(r)&&searchable(r).toLowerCase().includes(e.target.value.toLowerCase())));});
-  $("#video-search").addEventListener("input",e=>{$("#video-list").innerHTML=listHTML(records.filter(r=>isVideo(r)&&searchable(r).toLowerCase().includes(e.target.value.toLowerCase())));});
+  $("#audio-search").addEventListener("input",e=>{$("#audio-list").innerHTML=listHTML(records.filter(r=>!isVideo(r)&&searchable(r).toLowerCase().includes(e.target.value.toLowerCase())));updateSelection();});
+  $("#video-search").addEventListener("input",e=>{$("#video-list").innerHTML=listHTML(records.filter(r=>isVideo(r)&&searchable(r).toLowerCase().includes(e.target.value.toLowerCase())));updateSelection();});
   $("#clear-selection").addEventListener("click",()=>{selected.clear();updateSelection();});
   $("#copy-selection").addEventListener("click",async()=>{
     const sections=["audio","video"].map(kind=>{
