@@ -14,30 +14,23 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#home">gzylz <span>collection</span></a>
+    <a class="brand" href="#home">gzylz</a>
     <nav aria-label="Main navigation">
       <button class="nav-link active" data-view="home">Home</button>
       <button class="nav-link" data-view="audio">Audio</button>
       <button class="nav-link" data-view="video">Video</button>
     </nav>
     <button class="quiet-button global-expand" data-expand="all">Expand all</button>
+    <button class="quiet-button global-select" data-select-all="all">Select all</button>
     <button class="selection-trigger" id="open-selection">Selection <b id="selection-count">0</b></button>
   </header>
 
   <main class="shell">
     <section id="home-view" class="view active">
-      <div class="hero">
-        <div>
-          <p class="eyebrow">MUSICAL THEATRE ARCHIVE</p>
-          <h1>A little corner<br>of the collection.</h1>
-          <p class="intro">Browse, search, and keep track of recordings.</p>
-        </div>
-        <aside class="source-card">
-          <span class="eyebrow">COLLECTION STATUS</span>
-          <p id="source-status" class="source-status"><i></i> Connecting to the list…</p>
-          <p id="updated-at" class="muted small"></p>
-          <button class="text-button" id="refresh-button">Refresh list ↗</button>
-        </aside>
+      <div class="source-card source-status-card">
+        <p id="source-status" class="source-status"><i></i> Connecting to the list…</p>
+        <p id="updated-at" class="muted small"></p>
+        <button class="text-button" id="refresh-button">Refresh list ↗</button>
       </div>
 
       <div class="stats">
@@ -60,7 +53,7 @@
     </section>
 
     <section id="audio-view" class="view">
-      <div class="page-title"><div><p class="eyebrow">BROWSE COLLECTION</p><h1>Audio</h1><p class="muted" id="audio-subtitle">Loading recordings…</p></div><button class="quiet-button" data-view="home">← Home</button></div>
+      <div class="page-title"><div><h1>Audio</h1><p class="muted" id="audio-subtitle">Loading recordings…</p></div><button class="quiet-button" data-view="home">← Home</button></div>
       <div class="toolbar"><input class="section-search" id="audio-search" type="search" placeholder="Search audio…"><button class="quiet-button" data-expand="audio">Expand all groups</button><button class="quiet-button" data-select-all="audio">Select all</button></div>
       <div id="audio-list" class="group-list"></div>
     </section>
@@ -80,6 +73,6 @@
     <p id="copy-feedback" class="small feedback"></p>
   </dialog>
 
-  <footer><span>gzylz collection</span><span>Personal catalogue · data loaded from Google Docs</span></footer>
+  
 </body>
 </html>
