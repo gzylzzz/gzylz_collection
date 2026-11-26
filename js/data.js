@@ -121,8 +121,13 @@
       }
       if (inWants) continue;
 
-      // Google Docs show sections may put a count line between the title
-      // and the first recording, e.g. "Chess" followed by "24 audios".
+      // A plain-text show title can be separated from its first entry by
+      // a count line, e.g. "Chess" followed by "24 audios".
+      if (i+1<lines.length && isAudioCount(lines[i+1].text) &&
+          !item.heading && !isSection(line) && !parseMetadata(line)) {
+        currentShow = line;
+        continue;
+      }
       if (isAudioCount(line)) {
         const previous = lines[i-1];
         if (previous && previous.text && !previous.heading &&
@@ -161,7 +166,9 @@
       for (;next<lines.length;next++) {
         const value = lines[next].text;
 
-        // Stop at the next tab/section heading or the next recording entry.
+        // Stop before the next show title, including titles followed by a count line.
+        if (next+1<lines.length && isAudioCount(lines[next+1].text) &&
+            !lines[next].heading && !isSection(value) && !parseMetadata(value)) break;
         if (lines[next].heading || isSection(value) || isAudioCount(value) || parseMetadata(value)) break;
         if (isTitleBeforeEntry(next)) break;
 
