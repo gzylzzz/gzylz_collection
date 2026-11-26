@@ -68,7 +68,7 @@
     try {
       const result=await window.GZYLZ_DATA.load();
       records=result.records;
-      updateCounts(); renderAll();
+      updateCounts(); renderAll(); updateSelection();
       status("List loaded", "ok");
       $("#updated-at").textContent="Fetched "+result.loadedAt.toLocaleString();
     } catch(error) {
@@ -93,7 +93,15 @@
   function updateSelection() {
     $("#selection-count").textContent=selected.size;
     $("#selection-items").innerHTML=selected.size?[...selected.values()].map(r=>'<div class="selected-item"><span><b>['+(isVideo(r)?"Video":"Audio")+']</b> '+esc(showName(r))+' — '+esc([r.production,r.date,r.master].filter(Boolean).join(" · "))+'</span><button data-remove="'+esc(r._id)+'">Remove</button></div>').join(""):'<div class="empty">Nothing selected yet.</div>';
-    $$("[data-select]").forEach(input=>input.checked=selected.has(input.dataset.select));
+    $("[data-select]").forEach(input=>input.checked=selected.has(input.dataset.select));
+    $("[data-select-all]").forEach(button=>{
+      const targets=records.filter(r=>button.dataset.selectAll==="all"||(button.dataset.selectAll==="video")===isVideo(r));
+      button.textContent=targets.length&&targets.every(r=>selected.has(r._id))?"Deselect all":"Select all";
+    });
+    $("[data-select-group]").forEach(button=>{
+      const targets=records.filter(r=>showName(r)===button.dataset.selectGroup&&(button.dataset.groupKind==="video")===isVideo(r));
+      button.textContent=targets.length&&targets.every(r=>selected.has(r._id))?"Deselect show":"Select show";
+    });
   }
   document.addEventListener("click",event=>{
     const view=event.target.closest("[data-view]"); if(view){showView(view.dataset.view);return;}
