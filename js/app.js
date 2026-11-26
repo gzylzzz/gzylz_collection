@@ -30,7 +30,6 @@
   function recordHTML(r) {
     const meta=[r.production,r.date,r.master].filter(Boolean).join(" · ");
     const checked=selected.has(r._id)?"checked":"";
-    const disabled=hasNftRestriction(r.nft)?"disabled title='NFT restricted'":"";
     return '<article class="record"><div class="record-row"><input class="record-check" type="checkbox" data-select="'+esc(r._id)+'" '+checked+' '+disabled+'><button class="record-main" data-open-record><span class="record-title">'+esc(showName(r))+'</span><span class="record-sub">'+esc(meta)+'</span></button><button class="record-open" data-open-record aria-label="Show details">⌄</button></div>'+detailHTML(r)+'</article>';
   }
   function listHTML(list) {
@@ -76,6 +75,12 @@
       $("#search-results").innerHTML='<div class="empty">The source could not be read. If this is a CORS restriction, we will connect a small Google Apps Script endpoint next.</div>';
     }
   }
+  function selectVisible(kind) {
+    const query=(kind==="audio"?$("#audio-search").value:$("#video-search").value).trim().toLowerCase();
+    records.filter(r=>(kind==="video")===isVideo(r)&&(!query||searchable(r).toLowerCase().includes(query)))
+      .forEach(r=>selected.set(r._id,r));
+    updateSelection();
+  }
   function updateSelection() {
     $("#selection-count").textContent=selected.size;
     $("#selection-items").innerHTML=selected.size?[...selected.values()].map(r=>'<div class="selected-item"><span><b>['+(isVideo(r)?"Video":"Audio")+']</b> '+esc(showName(r))+' — '+esc([r.production,r.date,r.master].filter(Boolean).join(" · "))+'</span><button data-remove="'+esc(r._id)+'">Remove</button></div>').join(""):'<div class="empty">Nothing selected yet.</div>';
@@ -89,7 +94,17 @@
     const remove=event.target.closest("[data-remove]");if(remove){selected.delete(remove.dataset.remove);updateSelection();return;}
     const group=event.target.closest("[data-toggle-group]");if(group){const body=group.closest(".group").querySelector(".group-body");body.hidden=!body.hidden;group.closest(".group").classList.toggle("open",!body.hidden);return;}
     const recordButton=event.target.closest("[data-open-record]");if(recordButton){const details=recordButton.closest(".record").querySelector(".record-details");details.hidden=!details.hidden;return;}
-    const expand=event.target.closest("[data-expand]");if(expand){const root=expand.dataset.expand==="audio"?"#audio-list":"#video-list";const bodies=$$(root+" .group-body");const open=bodies.some(b=>b.hidden);bodies.forEach(b=>b.hidden=!open);expand.textContent=open?"Collapse all":"Expand all";return;}
+    const expand=event.target.closest("[data-expand]");
+    if(expand){
+      const roots=expand.dataset.expand==="all"?["#audio-list","#video-list"]:[expand.dataset.expand==="audio"?"#audio-list":"#video-list"];
+      const bodies=roots.flatMap(root=>$(root+" .group-body"));
+      const open=bodies.some(b=>b.hidden);
+      bodies.forEach(b=>{b.hidden=!open;b.closest(".group").classList.toggle("open",open);});
+      expand.textContent=open?(expand.dataset.expand==="all"?"Collapse all":"Collapse all groups"):(expand.dataset.expand==="all"?"Expand all":"Expand all groups");
+      return;
+    }
+    const selectAll=event.target.closest("[data-select-all]");
+    if(selectAll){selectVisible(selectAll.dataset.selectAll);return;}
     const chip=event.target.closest("[data-filter]");if(chip){searchFilter=chip.dataset.filter;$$("[data-filter]").forEach(c=>c.classList.toggle("active",c===chip));runSearch();}
   });
   document.addEventListener("change",event=>{
@@ -101,8 +116,17 @@
   $("#video-search").addEventListener("input",e=>{$("#video-list").innerHTML=listHTML(records.filter(r=>isVideo(r)&&searchable(r).toLowerCase().includes(e.target.value.toLowerCase())));});
   $("#clear-selection").addEventListener("click",()=>{selected.clear();updateSelection();});
   $("#copy-selection").addEventListener("click",async()=>{
-    const sections=["audio","video"].map(kind=>{const rows=[...selected.values()].filter(r=>(kind==="video")===isVideo(r));return rows.length?"["+kind.toUpperCase()+"]\n"+rows.map(r=>"• "+showName(r)+"\n"+[r.production,r.date,r.master,r.size].filter(Boolean).join(" | ")).join("\n\n"):"";}).filter(Boolean);
-    try{await navigator.clipboard.writeText(sections.join("\n\n"));$("#copy-feedback").textContent="Copied!";}catch(e){$("#copy-feedback").textContent="Clipboard access is unavailable in this browser.";}
+    const sections=["audio","video"].map(kind=>{
+      const rows=[...selected.values()].filter(r=>(kind==="video")===isVideo(r));
+      const lines=rows.map(r=>{
+        const parts=[showName(r),r.production,r.date,r.master];
+        if(kind==="video") parts.push(r.type,r.size);
+        const nft=hasNftRestriction(r.nft)?" [NFT: "+(r.nft==="true"?"restricted":r.nft)+"]":"";
+        return parts.filter(Boolean).join(" | ")+nft;
+      });
+      return lines.length?"["+kind.toUpperCase()+"]\\n"+lines.join("\\n\\n"):"";
+    }).filter(Boolean);
+    try{await navigator.clipboard.writeText(sections.join("\\n\\n"));$("#copy-feedback").textContent="Copied!";}catch(e){$("#copy-feedback").textContent="Clipboard access is unavailable in this browser.";}
   });
   refresh();
 })();
