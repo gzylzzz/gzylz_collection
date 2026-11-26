@@ -49,43 +49,38 @@
   }
   function textFallback(doc) {
     const nodes = [...doc.querySelectorAll("h1,h2,h3,p,li")];
-    const items = nodes.map(el => {
+    const lines = nodes.map(el => {
       const text = clean(el.innerText || el.textContent);
       const tag = el.tagName.toLowerCase();
-      const style = (el.getAttribute("style") || "").toLowerCase();
-      const bold = !!el.querySelector("b,strong") ||
-        /font-weight\s*:\s*(bold|[6-9]00)/i.test(style) ||
-        [...el.querySelectorAll("[style]")].some(child =>
-          /font-weight\s*:\s*(bold|[6-9]00)/i.test(child.getAttribute("style") || "")
-        );
-      return {el,text,tag,bold,heading:/^h[1-3]$/.test(tag)};
+      return {text, tag, showHeading:tag === "h2"};
     }).filter(item => item.text);
 
-    // Some published Google Docs layouts flatten paragraphs. Keep a text-only
-    // fallback, but never use arbitrary preceding cast/note text as a show name.
-    const lines = items.length ? items : clean(doc.body?.innerText || "")
-      .split(/\n+/).map(text => ({text:clean(text),tag:"p",bold:false,heading:false})).filter(x => x.text);
+    const sourceLines = lines.length ? lines : clean(doc.body?.innerText || "")
+      .split(/\n+/).map(text => ({text:clean(text),tag:"p",showHeading:false})).filter(item => item.text);
 
     const records = [];
     let kind = "audio";
     let currentShow = "";
     let inWants = false;
 
-    const isSection = value => /^(audio|videos?|concerts?(?:\s*\(miscellaneous\))?)$/i.test(value);
+    const isSection = value => /^(audio|videos?|concerts(?:\s*\(miscellaneous\))?)$/i.test(clean(value));
     const isAudioCount = value => /^\d+\s+audios?$/i.test(clean(value));
-    const isTitleBeforeEntry = index => {
-      const item = lines[index];
-      if (!item || item.heading || !item.text || isSection(item.text) || isAudioCount(item.text)) return false;
-      for (let j=index+1;j<lines.length;j++) {
-        if (!lines[j].text) continue;
-        if (isAudioCount(lines[j].text)) return false;
-        return !!parseMetadata(lines[j].text);
+    const isFileLine = value => /^\([^)]*,[^)]*\)$/.test(clean(value)) &&
+      /\b(mp3|m4a|wav|aif|aiff|flac|vob|mp4|mov|mpeg|ts|avi|mkv|wmv|m4v)\b/i.test(value);
+
+    const isPlainTitleBeforeEntry = index => {
+      const item = sourceLines[index];
+      if (!item || item.showHeading || isSection(item.text) || isAudioCount(item.text) || parseMetadata(item.text)) return false;
+      for (let j=index+1;j<sourceLines.length;j++) {
+        if (isAudioCount(sourceLines[j].text)) return false;
+        if (!sourceLines[j].text) continue;
+        return !!parseMetadata(sourceLines[j].text);
       }
       return false;
     };
 
-    for (let i=0;i<lines.length;i++) {
-      const item = lines[i];
+    for (let i=0;i<sourceLines.length;i++) {
+      const item = sourceLines[i];
       const line = item.text;
 
       if (/^wants$/i.test(line)) {
@@ -94,21 +89,16 @@
         continue;
       }
 
-      if (item.heading) {
+      if (item.showHeading) {
         if (/^videos?$/i.test(line)) {
           kind = "video";
           currentShow = "";
-        } else if (/^audios?$/i.test(line)) {
-          kind = "audio";
-          currentShow = "";
-        } else if (/^concerts?(?:\s*\(miscellaneous\))?$/i.test(line)) {
-          // Concert headings are category labels, not the title of every entry.
+        } else if (/^audios?$/i.test(line) || /^concerts(?:\s*\(miscellaneous\))?$/i.test(line)) {
           kind = "audio";
           currentShow = "";
         } else {
-          // Heading 2 tabs such as Les Misérables and The Phantom of the Opera
-          // explicitly start a new show group.
           currentShow = line;
+          inWants = false;
         }
         continue;
       }
@@ -120,26 +110,9 @@
         continue;
       }
       if (inWants) continue;
+      if (isAudioCount(line)) continue;
 
-      // A plain-text show title can be separated from its first entry by
-      // a count line, e.g. "Chess" followed by "24 audios".
-      if (i+1<lines.length && isAudioCount(lines[i+1].text) &&
-          !item.heading && !isSection(line) && !parseMetadata(line)) {
-        currentShow = line;
-        continue;
-      }
-      if (isAudioCount(line)) {
-        const previous = lines[i-1];
-        if (previous && previous.text && !previous.heading &&
-            !isSection(previous.text) && !parseMetadata(previous.text)) {
-          currentShow = previous.text;
-        }
-        continue;
-      }
-
-      // A title immediately followed by a dated metadata line is the
-      // recording/show title, not part of the previous recording's notes.
-      if (isTitleBeforeEntry(i)) {
+      if (isPlainTitleBeforeEntry(i)) {
         currentShow = line;
         continue;
       }
@@ -154,8 +127,8 @@
       );
 
       let next = i + 1;
-      if (next < lines.length && /^\([^)]*,[^)]*\)$/.test(lines[next].text)) {
-        const split = lines[next].text.replace(/^\(|\)$/g,"").split(",").map(clean);
+      if (next < sourceLines.length && isFileLine(sourceLines[next].text)) {
+        const split = sourceLines[next].text.replace(/^\(|\)$/g,"").split(",").map(clean);
         if (!record.type) record.type = split[0] || "";
         if (!record.size) record.size = split.slice(1).join(", ");
         next++;
@@ -163,18 +136,16 @@
 
       const castLines = [], noteLines = [], myNoteLines = [];
       let textSection = "cast";
-      for (;next<lines.length;next++) {
-        const value = lines[next].text;
 
-        // Stop before the next show title, including titles followed by a count line.
-        if (next+1<lines.length && isAudioCount(lines[next+1].text) &&
-            !lines[next].heading && !isSection(value) && !parseMetadata(value)) break;
-        if (lines[next].heading || isSection(value) || isAudioCount(value) || parseMetadata(value)) break;
-        if (isTitleBeforeEntry(next)) break;
+      for (;next<sourceLines.length;next++) {
+        const value = sourceLines[next].text;
+
+        if (sourceLines[next].showHeading || isSection(value) || isAudioCount(value) || parseMetadata(value)) break;
+        if (isPlainTitleBeforeEntry(next)) break;
 
         if (/^never gift\.?$/i.test(value)) { record.gift = "Never Gift"; continue; }
         if (/^only gift\.?$/i.test(value)) { record.gift = "Only Gift"; continue; }
-        // NFT restriction lines may be marked with a bullet in the source document.
+
         const nftLine = value.replace(/^[●•▪︎◦*-]+\s*/, "").trim();
         if (/^nft(?:\s+(?:except\s+through\s+master|until\b.*))?$/i.test(nftLine)) {
           record.nft = nftLine;
@@ -194,6 +165,7 @@
           record.gift = record.gift ? record.gift + "; " + value : value;
           continue;
         }
+
         if (textSection === "mynotes") myNoteLines.push(value);
         else if (textSection === "notes") noteLines.push(value);
         else castLines.push(value);
