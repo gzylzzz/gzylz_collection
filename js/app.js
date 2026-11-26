@@ -93,12 +93,12 @@
   function updateSelection() {
     $("#selection-count").textContent=selected.size;
     $("#selection-items").innerHTML=selected.size?[...selected.values()].map(r=>'<div class="selected-item"><span><b>['+(isVideo(r)?"Video":"Audio")+']</b> '+esc(showName(r))+' — '+esc([r.production,r.date,r.master].filter(Boolean).join(" · "))+'</span><button data-remove="'+esc(r._id)+'">Remove</button></div>').join(""):'<div class="empty">Nothing selected yet.</div>';
-    $("[data-select]").forEach(input=>input.checked=selected.has(input.dataset.select));
-    $("[data-select-all]").forEach(button=>{
+    $$("[data-select]").forEach(input=>input.checked=selected.has(input.dataset.select));
+    $$("[data-select-all]").forEach(button=>{
       const targets=records.filter(r=>button.dataset.selectAll==="all"||(button.dataset.selectAll==="video")===isVideo(r));
       button.textContent=targets.length&&targets.every(r=>selected.has(r._id))?"Deselect all":"Select all";
     });
-    $("[data-select-group]").forEach(button=>{
+    $$("[data-select-group]").forEach(button=>{
       const targets=records.filter(r=>showName(r)===button.dataset.selectGroup&&(button.dataset.groupKind==="video")===isVideo(r));
       button.textContent=targets.length&&targets.every(r=>selected.has(r._id))?"Deselect show":"Select show";
     });
