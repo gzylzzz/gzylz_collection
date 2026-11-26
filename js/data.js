@@ -57,6 +57,7 @@
 
     const sourceLines = lines.length ? lines : clean(doc.body?.innerText || "")
       .split(/\n+/).map(text => ({text:clean(text),tag:"p",showHeading:false})).filter(item => item.text);
+    const hasShowHeadings = sourceLines.some(item => item.showHeading);
 
     const records = [];
     let kind = "audio";
@@ -70,7 +71,7 @@
 
     const isPlainTitleBeforeEntry = index => {
       const item = sourceLines[index];
-      if (!item || item.showHeading || isSection(item.text) || isAudioCount(item.text) || parseMetadata(item.text)) return false;
+      if (!item || hasShowHeadings || item.showHeading || /^h[13]$/.test(item.tag) || isSection(item.text) || isAudioCount(item.text) || parseMetadata(item.text)) return false;
       for (let j=index+1;j<sourceLines.length;j++) {
         if (isAudioCount(sourceLines[j].text)) return false;
         if (!sourceLines[j].text) continue;
