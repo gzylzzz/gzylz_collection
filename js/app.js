@@ -34,7 +34,10 @@
   }
   function listHTML(list) {
     if(!list.length) return '<div class="empty">No recordings found.</div>';
-    return groupByTitle(list).map(([title,items],i)=>'<section class="group"><div class="group-head"><button class="group-toggle" data-toggle-group>'+esc(title)+'</button><span class="group-count">'+items.length+'</span><span class="group-chevron">⌄</span></div><div class="group-body" hidden>'+items.map(recordHTML).join("")+'</div></section>').join("");
+    return groupByTitle(list).map(([title,items])=>{
+      const kind = isVideo(items[0]) ? "video" : "audio";
+      return '<section class="group"><div class="group-head"><button class="group-toggle" data-toggle-group>'+esc(title)+'</button><span class="group-count">'+items.length+'</span><button class="group-select" data-select-group="'+esc(title)+'" data-group-kind="'+kind+'">Select show</button><span class="group-chevron">⌄</span></div><div class="group-body" hidden>'+items.map(recordHTML).join("")+'</div></section>';
+    }).join("");
   }
   function updateCounts() {
     const audio=records.filter(r=>!isVideo(r)), video=records.filter(isVideo);
@@ -76,9 +79,15 @@
     }
   }
   function selectVisible(kind) {
-    const query=(kind==="audio"?$("#audio-search").value:$("#video-search").value).trim().toLowerCase();
-    records.filter(r=>(kind==="video")===isVideo(r)&&(!query||searchable(r).toLowerCase().includes(query)))
-      .forEach(r=>selected.set(r._id,r));
+    const targets = records.filter(r=>kind==="all"||(kind==="video")===isVideo(r));
+    const allSelected = targets.length && targets.every(r=>selected.has(r._id));
+    targets.forEach(r=>allSelected?selected.delete(r._id):selected.set(r._id,r));
+    updateSelection();
+  }
+  function selectGroup(title, kind) {
+    const targets = records.filter(r=>showName(r)===title && (kind==="video")===isVideo(r));
+    const allSelected = targets.length && targets.every(r=>selected.has(r._id));
+    targets.forEach(r=>allSelected?selected.delete(r._id):selected.set(r._id,r));
     updateSelection();
   }
   function updateSelection() {
@@ -103,6 +112,8 @@
       expand.textContent=open?(expand.dataset.expand==="all"?"Collapse all":"Collapse all groups"):(expand.dataset.expand==="all"?"Expand all":"Expand all groups");
       return;
     }
+    const groupSelect=event.target.closest("[data-select-group]");
+    if(groupSelect){selectGroup(groupSelect.dataset.selectGroup,groupSelect.dataset.groupKind);return;}
     const selectAll=event.target.closest("[data-select-all]");
     if(selectAll){selectVisible(selectAll.dataset.selectAll);return;}
     const chip=event.target.closest("[data-filter]");if(chip){searchFilter=chip.dataset.filter;$$("[data-filter]").forEach(c=>c.classList.toggle("active",c===chip));runSearch();}
