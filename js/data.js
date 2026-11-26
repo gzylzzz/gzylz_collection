@@ -71,10 +71,10 @@
     let currentShow = "";
     let inWants = false;
 
-    const isSection = value => /^(audio|videos?)$/i.test(value);
+    const isSection = value => /^(audio|videos?|concerts?(?:\s*\(miscellaneous\))?)$/i.test(value);
     const isTitleBeforeEntry = index => {
       const item = lines[index];
-      if (!item || !item.bold || item.heading || !item.text) return false;
+      if (!item || item.heading || !item.text || isSection(item.text)) return false;
       for (let j=index+1;j<lines.length;j++) {
         if (!lines[j].text) continue;
         return !!parseMetadata(lines[j].text);
@@ -99,9 +99,8 @@
         } else if (/^audios?$/i.test(line)) {
           kind = "audio";
           currentShow = "";
-        } else if (/^concerts?$/i.test(line)) {
-          // Concert is a collection section; individual concert titles below
-          // identify the actual show for each entry.
+        } else if (/^concerts?(?:\s*\(miscellaneous\))?$/i.test(line)) {
+          // Concert headings are category labels, not the title of every entry.
           kind = "audio";
           currentShow = "";
         } else {
