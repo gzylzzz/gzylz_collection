@@ -57,7 +57,6 @@
 
     const sourceLines = lines.length ? lines : clean(doc.body?.innerText || "")
       .split(/\n+/).map(text => ({text:clean(text),tag:"p",showHeading:false})).filter(item => item.text);
-    const hasShowHeadings = sourceLines.some(item => item.showHeading);
 
     const records = [];
     let kind = "audio";
@@ -68,17 +67,6 @@
     const isAudioCount = value => /^\d+\s+audios?$/i.test(clean(value));
     const isFileLine = value => /^\([^)]*,[^)]*\)$/.test(clean(value)) &&
       /\b(mp3|m4a|wav|aif|aiff|flac|vob|mp4|mov|mpeg|ts|avi|mkv|wmv|m4v)\b/i.test(value);
-
-    const isPlainTitleBeforeEntry = index => {
-      const item = sourceLines[index];
-      if (!item || hasShowHeadings || item.showHeading || /^h[13]$/.test(item.tag) || isSection(item.text) || isAudioCount(item.text) || parseMetadata(item.text)) return false;
-      for (let j=index+1;j<sourceLines.length;j++) {
-        if (isAudioCount(sourceLines[j].text)) return false;
-        if (!sourceLines[j].text) continue;
-        return !!parseMetadata(sourceLines[j].text);
-      }
-      return false;
-    };
 
     for (let i=0;i<sourceLines.length;i++) {
       const item = sourceLines[i];
@@ -94,9 +82,13 @@
         if (/^videos?$/i.test(line)) {
           kind = "video";
           currentShow = "";
-        } else if (/^audios?$/i.test(line) || /^concerts(?:\s*\(miscellaneous\))?$/i.test(line)) {
+        } else if (/^audios?$/i.test(line)) {
           kind = "audio";
           currentShow = "";
+        } else if (/^concerts?(?:\s*\(miscellaneous\))?$/i.test(line)) {
+          kind = "audio";
+          currentShow = "Concert";
+          inWants = false;
         } else {
           currentShow = line;
           inWants = false;
@@ -104,19 +96,19 @@
         continue;
       }
 
+      if (/^concerts?(?:\s*\(miscellaneous\))?$/i.test(line)) {
+        kind = "audio";
+        currentShow = "Concert";
+        inWants = false;
+        continue;
+      }
       if (isSection(line)) {
         kind = /^videos?$/i.test(line) ? "video" : "audio";
         currentShow = "";
         inWants = false;
         continue;
       }
-      if (inWants) continue;
-      if (isAudioCount(line)) continue;
-
-      if (isPlainTitleBeforeEntry(i)) {
-        currentShow = line;
-        continue;
-      }
+      if (inWants || isAudioCount(line)) continue;
 
       const meta = parseMetadata(line);
       if (!meta) continue;
@@ -142,7 +134,6 @@
         const value = sourceLines[next].text;
 
         if (sourceLines[next].showHeading || isSection(value) || isAudioCount(value) || parseMetadata(value)) break;
-        if (isPlainTitleBeforeEntry(next)) break;
 
         if (/^never gift\.?$/i.test(value)) { record.gift = "Never Gift"; continue; }
         if (/^only gift\.?$/i.test(value)) { record.gift = "Only Gift"; continue; }
