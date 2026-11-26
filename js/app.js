@@ -124,9 +124,9 @@
         const nft=hasNftRestriction(r.nft)?" [NFT: "+(r.nft==="true"?"restricted":r.nft)+"]":"";
         return parts.filter(Boolean).join(" | ")+nft;
       });
-      return lines.length?"["+kind.toUpperCase()+"]\\n"+lines.join("\\n\\n"):"";
+      return lines.length?"["+kind.toUpperCase()+"]\n"+lines.join("\n\n"):"";
     }).filter(Boolean);
-    try{await navigator.clipboard.writeText(sections.join("\\n\\n"));$("#copy-feedback").textContent="Copied!";}catch(e){$("#copy-feedback").textContent="Clipboard access is unavailable in this browser.";}
+    try{await navigator.clipboard.writeText(sections.join("\n\n"));$("#copy-feedback").textContent="Copied!";}catch(e){$("#copy-feedback").textContent="Clipboard access is unavailable in this browser.";}
   });
   refresh();
 })();
