@@ -36,7 +36,7 @@
     if(!list.length) return '<div class="empty">No recordings found.</div>';
     return groupByTitle(list).map(([title,items])=>{
       const kind = isVideo(items[0]) ? "video" : "audio";
-      return '<section class="group"><div class="group-head"><button class="group-toggle" data-toggle-group>'+esc(title)+'</button><span class="group-count">'+items.length+'</span><button class="group-select" data-select-group="'+esc(title)+'" data-group-kind="'+kind+'">Select show</button><span class="group-chevron">⌄</span></div><div class="group-body" hidden>'+items.map(recordHTML).join("")+'</div></section>';
+      return '<section class="group"><div class="group-head"><button class="group-toggle" data-toggle-group>'+esc(title)+'</button><span class="group-count">'+items.length+'</span><button class="group-select" data-expand-group>V</button><button class="group-select" data-select-group="'+esc(title)+'" data-group-kind="'+kind+'">Select show</button><span class="group-chevron">⌄</span></div><div class="group-body" hidden>'+items.map(recordHTML).join("")+'</div></section>';
     }).join("");
   }
   function updateCounts() {
@@ -109,6 +109,7 @@
     if(event.target.closest("#open-selection")){$("#selection-dialog").showModal();updateSelection();return;}
     if(event.target.closest("#close-selection")){$("#selection-dialog").close();return;}
     const remove=event.target.closest("[data-remove]");if(remove){selected.delete(remove.dataset.remove);updateSelection();return;}
+    const expandGroup=event.target.closest("[data-expand-group]");if(expandGroup){const section=expandGroup.closest(".group");const body=section.querySelector(".group-body");const details=[...section.querySelectorAll(".record-details")];const open=details.some(item=>item.hidden);body.hidden=false;section.classList.add("open");details.forEach(item=>item.hidden=!open);return;}
     const group=event.target.closest("[data-toggle-group]");if(group){const body=group.closest(".group").querySelector(".group-body");body.hidden=!body.hidden;group.closest(".group").classList.toggle("open",!body.hidden);return;}
     const recordButton=event.target.closest("[data-open-record]");if(recordButton){const details=recordButton.closest(".record").querySelector(".record-details");details.hidden=!details.hidden;return;}
     const expand=event.target.closest("[data-expand]");
