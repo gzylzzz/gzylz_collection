@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f8f5f0">
-  <title>gzylz collection</title>
+  <title>i</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
@@ -14,7 +14,7 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#home">gzylz</a>
+    <a class="brand" href="#home">i</a>
     <nav aria-label="Main navigation">
       <button class="nav-link active" data-view="home">Home</button>
       <button class="nav-link" data-view="audio">Audio</button>
@@ -38,7 +38,6 @@
       </div>
 
       <div class="search-area">
-        <label class="eyebrow" for="search-input">FIND SOMETHING</label>
         <div class="search-wrap"><span>⌕</span><input id="search-input" type="search" placeholder="Search shows, productions, cast, masters…"><kbd>/</kbd></div>
         <div class="filter-row" id="search-filters">
           <button class="chip active" data-filter="all">All</button>
@@ -57,15 +56,14 @@
     </section>
 
     <section id="video-view" class="view">
-      <div class="page-title"><div><p class="eyebrow">BROWSE COLLECTION</p><h1>Video</h1><p class="muted" id="video-subtitle">Loading recordings…</p></div><button class="quiet-button" data-view="home">← Home</button></div>
+      <div class="page-title"><div><h1>Video</h1><p class="muted" id="video-subtitle">Loading recordings…</p></div><button class="quiet-button" data-view="home">← Home</button></div>
       <div class="toolbar"><input class="section-search" id="video-search" type="search" placeholder="Search video…"><button class="quiet-button" data-expand="video">Expand all groups</button><button class="quiet-button" data-select-all="video">Select all</button></div>
       <div id="video-list" class="group-list"></div>
     </section>
   </main>
 
   <dialog id="selection-dialog" class="selection-dialog">
-    <div class="dialog-heading"><div><p class="eyebrow">YOUR SHORTLIST</p><h2>Selected recordings</h2></div><button class="close-button" id="close-selection" aria-label="Close">×</button></div>
-    <p class="muted small">Choose recordings from Audio or Video, then copy the list for your trade message.</p>
+    <div class="dialog-heading"><div></div><button class="close-button" id="close-selection" aria-label="Close">×</button></div>
     <div id="selection-items"></div>
     <div class="dialog-actions"><button class="quiet-button" id="clear-selection">Clear all</button><button class="primary-button" id="copy-selection">Copy selection</button></div>
     <p id="copy-feedback" class="small feedback"></p>
